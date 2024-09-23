@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>USER INTERFACE</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Clock-Real-Time-real-time-clock.css">
+    <link rel="stylesheet" href="assets/css/Clock-Real-Time.css">
+    <link rel="stylesheet" href="assets/css/Form-Select---Full-Date---Month-Day-Year.css">
+</head>
+
+<body>
+    <div style="margin: 5%;margin-left: 5%;">
+        <nav class="navbar navbar-expand-md bg-body">
+            <div class="container-fluid"><a class="navbar-brand" href="#">IoT River Water Sensing</a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navcol-1">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link active" href="index.html">Real-time Sensing</a></li>
+                        <li class="nav-item"><a class="nav-link" href="download_readings.html">Download Readings</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div style="margin: 5%;">
+        <h2>Surface Parameters</h2>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Sensor Name</th>
+                        <th style="width: 12%;">Temperature</th>
+                        <th style="width: 12%;">Pressure</th>
+                        <th style="width: 40%;">Live Graph</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="height: 230px;">
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td style="height: 212.667px;"><img style="width: 100%;height: 99%;"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div style="margin: 5%;">
+        <h2>River-waterbed Parameters</h2>
+        <div class="table-responsive">
+            <table id="chart-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Sensor</th>
+                        <th>Latest Temperature (°C)</th>
+                        <th>Temperature Chart</th>
+                        <th>Latest Pressure (mbar)</th>
+                        <th>Pressure Chart</th>
+                    </tr>
+                </thead>
+                <tbody id="chart-table-body">
+                    <!-- Dynamic rows will be appended here -->
+                </tbody>
+            </table>
+                <tbody id="chart-table-body">
+                    <!-- Dynamic rows will be appended here -->
+                </tbody>
+            </table>
+            <!-- <table class="table"> -->
+                <!-- <thead>
+                    <tr>
+                        <th style="width: 12%;">Sensor Name</th>
+                        <th style="width: 12%;">Temperature</th>
+                        <th style="width: 12%;">Pressure</th>
+                        <th style="width: 40%;">Live Graph</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="height: 230px;">
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td style="height: 212.667px;"><img style="width: 100%;height: 99%;"></td>
+                    </tr>
+                    <tr style="height: 230px;">
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td>10 C</td>
+                        <td style="height: 212.667px;"><img style="width: 100%;height: 99%;"></td>
+                    </tr>
+                </tbody> -->
+            <!-- </table> -->
+        </div>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/Clock-Real-Time-real-time-clock.js"></script>
+    <script src="assets/js/co2timerEarth-timer.js"></script>
+    <script src="assets/js/zectStudio_12H-Time-Format-scripts.js"></script>
+    <script>
+        const socket = io();
+        const chartTableBody = document.getElementById('chart-table-body');
+        const sensorCharts = {};
+    
+        const createChart = (ctx, label, type) => {
+            const placeholderData = new Array(10).fill(null);
+            const placeholderLabels = new Array(10).fill('');
+    
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: placeholderLabels,
+                    datasets: [{
+                        label: `${label} ${type}`,
+                        borderColor: type === 'Temperature (°C)' ? 'rgb(255, 99, 132)' : 'rgb(54, 162, 235)',
+                        data: placeholderData.slice(), // Copy of placeholder data
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                        }
+                    }
+                }
+            });
+        };
+    
+        socket.on('update_data', (data) => {
+            const currentTime = new Date().toLocaleTimeString();
+    
+            Object.keys(data).forEach((sensor) => {
+                if (!sensorCharts[sensor]) {
+                    // Create a new row for this sensor
+                    const row = document.createElement('tr');
+    
+                    // Sensor name cell
+                    const sensorCell = document.createElement('td');
+                    sensorCell.textContent = sensor;
+                    row.appendChild(sensorCell);
+    
+                    // Latest temperature cell
+                    const latestTempCell = document.createElement('td');
+                    latestTempCell.id = `${sensor}_latest_temperature`;
+                    row.appendChild(latestTempCell);
+    
+                    // Temperature chart cell
+                    const tempCell = document.createElement('td');
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.id = `${sensor}_temperature_chart`;
+                    tempCell.appendChild(tempCanvas);
+                    row.appendChild(tempCell);
+    
+                    // Latest pressure cell
+                    const latestPressureCell = document.createElement('td');
+                    latestPressureCell.id = `${sensor}_latest_pressure`;
+                    row.appendChild(latestPressureCell);
+    
+                    // Pressure chart cell
+                    const pressureCell = document.createElement('td');
+                    const pressureCanvas = document.createElement('canvas');
+                    pressureCanvas.id = `${sensor}_pressure_chart`;
+                    pressureCell.appendChild(pressureCanvas);
+                    row.appendChild(pressureCell);
+    
+                    chartTableBody.appendChild(row);
+    
+                    sensorCharts[sensor] = {
+                        temperature: createChart(tempCanvas.getContext('2d'), sensor, 'Temperature (°C)'),
+                        pressure: createChart(pressureCanvas.getContext('2d'), sensor, 'Pressure (mbar)')
+                    };
+                }
+    
+                const tempChart = sensorCharts[sensor].temperature;
+                const pressureChart = sensorCharts[sensor].pressure;
+    
+                tempChart.data.labels.push(currentTime);
+                pressureChart.data.labels.push(currentTime);
+    
+                if (tempChart.data.labels.length > 10) {
+                    tempChart.data.labels.shift();
+                    pressureChart.data.labels.shift();
+                }
+    
+                tempChart.data.datasets[0].data.push(data[sensor].temperature);
+                pressureChart.data.datasets[0].data.push(data[sensor].pressure);
+    
+                if (tempChart.data.datasets[0].data.length > 10) {
+                    tempChart.data.datasets[0].data.shift();
+                    pressureChart.data.datasets[0].data.shift();
+                }
+    
+                tempChart.update();
+                pressureChart.update();
+    
+                // Update latest temperature and pressure values
+                document.getElementById(`${sensor}_latest_temperature`).textContent = data[sensor].temperature.toFixed(2);
+                document.getElementById(`${sensor}_latest_pressure`).textContent = data[sensor].pressure.toFixed(2);
+            });
+        });
+    </script>
+</body>
+
+</html>

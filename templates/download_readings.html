@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>USER INTERFACE</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/Clock-Real-Time-real-time-clock.css">
+    <link rel="stylesheet" href="assets/css/Clock-Real-Time.css">
+    <link rel="stylesheet" href="assets/css/Form-Select---Full-Date---Month-Day-Year.css">
+</head>
+
+<body>
+    <div style="margin: 5%;margin-left: 5%;">
+        <nav class="navbar navbar-expand-md bg-body">
+            <div class="container-fluid"><a class="navbar-brand" href="#">IoT River Water Sensing</a><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-1"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navcol-1">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link active" href="/">Real-time Sensing</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/download_readings">Download Readings</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div style="margin: 5%;">
+        <div class="row" style="width: 100%;">
+            <div class="col-xxl-3" style="width: 300px;">
+                <h1>From</h1>
+                <div class="row">
+                    <div class="col-sm-12"><select class="display-inline-block">
+                            <option value="1" selected="">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select><select class="display-inline-block">
+                            <option value="1" selected="">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select><select class="display-inline-block">
+                            <option value="2016" selected="">2016</option>
+                            <option value="2017">2017</option>
+                        </select></div>
+                </div>
+                <div><input id="myTime" class="mb-2 d-inline" type="time" onchange="onTimeChange()"></div>
+            </div>
+            <div class="col-xxl-3" style="width: 300px;">
+                <h1>To</h1>
+                <div class="row">
+                    <div class="col-sm-12"><select class="display-inline-block">
+                            <option value="1" selected="">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select><select class="display-inline-block">
+                            <option value="1" selected="">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                        </select><select class="display-inline-block">
+                            <option value="2016" selected="">2016</option>
+                            <option value="2017">2017</option>
+                        </select></div>
+                </div>
+                <div><input id="myTime-1" class="mb-2 d-inline" type="time" onchange="onTimeChange()"></div>
+            </div>
+            <div class="col-xxl-5" style="width: 244px;text-align: center;padding: 0px;margin: 2%;">
+                <h1 style="width: 447px;">Number of Recordings:<br>100</h1>
+            </div>
+        </div>
+        <div class="text-start"><button class="btn btn-primary fs-4" type="button" style="width: 200px;height: 100px;">Download CSV</button></div>
+    </div>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/Clock-Real-Time-real-time-clock.js"></script>
+    <script src="assets/js/co2timerEarth-timer.js"></script>
+    <script src="assets/js/zectStudio_12H-Time-Format-scripts.js"></script>
+</body>
+
+</html>
