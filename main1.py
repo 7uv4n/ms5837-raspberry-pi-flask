@@ -4,10 +4,16 @@ import sqlite3
 from datetime import datetime
 import csv
 import os
+import subprocess
+import threading
 
 
 app = Flask(__name__, static_folder='templates/assets')
 socketio = SocketIO(app, async_mode='eventlet')
+
+
+def run_script():
+    subprocess.Popen(['python', 'ms5837_module/send_request_.py'])
 
 # Initialize the SQLite database
 def init_db():
@@ -112,10 +118,12 @@ def display_data():
         {"sensor_id": sensor_id, "temperature": data.get('temperature'), "pressure": data.get('pressure')}
         for sensor_id, data in sensor_data.items()
     ]
+    print(sensor_data_list)
 
     # Send the list as a JSON response
     return jsonify(sensor_data_list)
 
 if __name__ == '__main__':
     init_db()
+    threading.Thread(target=run_script).start()
     socketio.run(app, port=5000, debug=True)
