@@ -6,14 +6,21 @@ import csv
 import os
 import subprocess
 import threading
-
+import ms5837
+import smbus
+import time
+import requests
+import json
 
 app = Flask(__name__, static_folder='templates/assets')
 socketio = SocketIO(app, async_mode='eventlet')
 
-
-def run_script():
-    subprocess.Popen(['python', 'ms5837_module/send_request_.py'])
+# I2C multiplexer address
+MUX_ADDR = 0x70
+# Create I2C bus object
+bus = smbus.SMBus(1)
+# Server URL for data sending
+server_url = "http://127.0.0.1:5000/data"
 
 # Initialize the SQLite database
 def init_db():
@@ -30,7 +37,8 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-
+    
+    
 # Insert data into the database
 def insert_sensor_data(sensor_id, temperature, pressure):
     conn = sqlite3.connect('sensor_data.db')
@@ -42,6 +50,102 @@ def insert_sensor_data(sensor_id, temperature, pressure):
     ''', (current_time, sensor_id, temperature, pressure))
     conn.commit()
     conn.close()
+
+# Function to select multiplexer channel
+def select_channel(channel):
+    bus.write_byte(MUX_ADDR, 1 << channel)
+
+# Function to read from a single MS5837 sensor
+def read_sensor(sensor):
+    try:
+        if sensor.read():
+            pressure = sensor.pressure()
+            temperature = sensor.temperature()
+            return pressure, temperature
+    except Exception as e:
+        print(f"Error reading sensor: {e}")
+    return None
+
+# Function to send data to the server
+def send_data_to_server(data):
+    headers = {'Content-Type': 'application/json'}
+    try:
+        response = requests.post(server_url, headers=headers, data=json.dumps(data))
+        return response
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending data to server: {e}")
+        return None
+
+
+# Initialize sensors
+sensors = []
+for i in range(8):
+    select_channel(i)
+    try:
+        sensor = ms5837.MS5837_30BA()
+        if sensor.init():
+            sensors.append((i, sensor))
+    except Exception as e:
+        print(f"Error initializing sensor on channel {i}: {e}")
+
+# Function to get data from the ESP32 (modify the URL according to your ESP32 endpoint)
+def get_data_from_esp32():
+    esp32_url = "http://192.168.178.31:5000/get_sensor_data"  # ESP32 URL for GET request
+    try:
+        response = requests.get(esp32_url)
+        if response.status_code == 200:
+            esp32_data = response.json()
+            return esp32_data  # Return the JSON response from ESP32
+        else:
+            print(f"Error: Received {response.status_code} from ESP32")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error connecting to ESP32: {e}")
+        return None
+
+# need to modify the main4.py especially this function. so far it is working to get the values from esp32, but  not far till to read the values and display the stuffs
+
+# Function to run the sensor reading loop
+def run_sensor_reading():
+    while True:
+        sensor_data = {}
+
+        # Read from local sensors connected via the multiplexer
+        for channel, sensor in sensors:
+            select_channel(channel)
+            result = read_sensor(sensor)
+            if result:
+                pressure, temperature = result
+                sensor_data[f"sensor{channel+1}"] = {
+                    "pressure": round(pressure, 2),
+                    "temperature": round(temperature, 2)
+                }
+
+                # Insert data into the database
+                insert_sensor_data(f"sensor{channel+1}", temperature, pressure)
+
+        # Fetch data from ESP32
+        esp32_data = get_data_from_esp32()
+        print(esp32_data)
+        
+        sensor_data['sensor0'] = esp32_data
+        # if esp32_data:
+        #     for sensor_id, values in esp32_data.items():
+        #         print(esp32_data.items())
+        #         sensor_data[sensor_id] = {
+        #             "temperature": values['temperature'],
+        #             "pressure": values['pressure']
+        #         }
+        #         # Insert ESP32 data into the database
+        #         insert_sensor_data(sensor_id, values['temperature'], values['pressure'])
+
+        # Send collected data to the server (if there is any data)
+        if sensor_data:
+            print(sensor_data)
+            send_data_to_server(sensor_data)
+
+        time.sleep(1)  # Adjust delay if necessary
+
 
 @app.route('/')
 def index():
@@ -58,23 +162,19 @@ def receive_data():
 
     for key, value in sensor_data.items():
         insert_sensor_data(key, value.get('temperature'), value.get('pressure'))
-    print(sensor_data)
     socketio.emit('update_data', sensor_data)
     return jsonify({"status": "success", "data": sensor_data})
 
 @app.route('/download', methods=['POST'])
 def download_data():
-    # Retrieve the 'from' and 'to' date and time from the request
-    from_date = request.form['from_date']  # Format: YYYY-MM-DD
-    from_time = request.form['from_time']  # Format: HH:MM
-    to_date = request.form['to_date']      # Format: YYYY-MM-DD
-    to_time = request.form['to_time']      # Format: HH:MM
+    from_date = request.form['from_date']
+    from_time = request.form['from_time']
+    to_date = request.form['to_date']
+    to_time = request.form['to_time']
 
-    # Combine date and time to form datetime objects
     from_datetime = f"{from_date} {from_time}:00"
     to_datetime = f"{to_date} {to_time}:00"
 
-    # Query the database for the specified date range
     conn = sqlite3.connect('sensor_data.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -83,47 +183,28 @@ def download_data():
     rows = cursor.fetchall()
     conn.close()
 
-    # Create a CSV file with the queried data
     csv_filename = 'sensor_readings.csv'
     with open(csv_filename, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
         csv_writer.writerow(['ID', 'Timestamp', 'Sensor ID', 'Temperature', 'Pressure'])
         csv_writer.writerows(rows)
 
-    # Send the CSV file as a download
     return send_file(csv_filename, as_attachment=True)
 
-# @app.route('/display')
-# def display_data():
-    # conn = sqlite3.connect('sensor_data.db')
-    # cursor = conn.cursor()
-    # cursor.execute('SELECT * FROM sensor_data ORDER BY id DESC LIMIT 10')
-    # rows = cursor.fetchall()
-    # print(rows)
-    # conn.close()
-    # sensor_data_list = [
-        # {"id": row[0], "timestamp": row[1], "sensor_id": row[2], "temperature": row[3], "pressure": row[4]}
-        # for row in rows
-    # ]
-    # return jsonify(sensor_data_list)
-    
 @app.route('/display')
 def display_data():
-    # Fetch data directly from the in-memory sensor_data variable
     if 'sensor_data' not in globals():
         return jsonify({"error": "No sensor data available"}), 404
 
-    # Convert the sensor_data dict into a list of dicts for easy display
     sensor_data_list = [
         {"sensor_id": sensor_id, "temperature": data.get('temperature'), "pressure": data.get('pressure')}
         for sensor_id, data in sensor_data.items()
     ]
     print(sensor_data_list)
-
-    # Send the list as a JSON response
     return jsonify(sensor_data_list)
 
 if __name__ == '__main__':
     init_db()
-    threading.Thread(target=run_script).start()
+    threading.Thread(target=run_sensor_reading).start()
     socketio.run(app, port=5000, debug=True)
+        
